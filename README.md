@@ -16,67 +16,17 @@ explicit dependencies on modules,
 and should be defaulted whenever possible.
 Floating IP resources do need to use this output to create the dependency,
 which is necessary to ensure proper ordering of destroy operations
-(see *Outputs* and *Example* below for more details).
+(see *Example Usage* and *Attribute Reference* below for more details).
 
-Inputs:
-
--   **subnet** - Subnet CIDR address range
-
-    This is the range of *internal* IP addresses for the network,
-    unrelated to any external (public) floating IP address pool.
-
--   **external_gateway** - Network UUID of external network
-
--   **pool** (optional, default is "public") - Name of IP address pool
-
-    This is used for floating IP allocations
-    and should be the one for  the external gateway network given above
-    (see **pool** in *Outputs* below)
-
--   **region** (optional, default is empty string = OpenStack default region)
-
-    OpenStack region (e.g. `$OS_REGION_NAME` on OpenStack RC file)
-
--   **name** (optional, default is "ext-net") - Base name for network resources
-
-    If this is defaulted the following OpenStack names (*not* Terraform names)
-    are used for created resources:
-
-    -   network "ext-net"
-    -   subnet "ext-net-subnet"
-    -   router "ext-net-gateway"
-
-Outputs:
-
--   **uuid** - Network UUID for use in OpenStack Nova compute instances
-
--    **pool** - Name of IP address pool for floating IP allocations
-
-    This should be associated with the external gateway network given above.
-
-    To insure the proper destruction order
-    (compute instance -> floating IP -> gateway router)
-    floating IPs should have a dependency on the gateway router.
-
-    Terraform 0.4.2 does not allow **depends_on** to use a module name
-    (see <https://github.com/hashicorp/terraform/issues/1178>)
-    or to contain an interpolated variable,
-    so there is no way to create an explicit dependency.
-    Instead we create an implicit dependency by having the floating IP
-	get the pool name from this module.
-
-	Note that Terraform 0.4-0.4.2 have other problems with module dependencies
-	as well (see <https://github.com/hashicorp/terraform/issues/1582>)
-	so resource destruction using modules will require manual intervention.
-
-Example:
+Example Usage
+-------------
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 provider "openstack" {
     auth_url = "${var.auth_url}"
     tenant_name = "ext-net-example"
 }
-	
+
 module "dmz" {
     source = "github.com/pitmine/ext-net"
     external_gateway = "ca80ff29-4f29-49a5-aa22-549f31b09268"
@@ -102,3 +52,59 @@ resource "openstack_compute_instance_v2" "server" {
     }
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Argument Reference
+------------------
+
+The following module inputs (arguments) are supported:
+
+-   `subnet` - (Required) Subnet CIDR address range
+
+    This is the range of *internal* IP addresses for the network,
+    unrelated to any external (public) floating IP address pool.
+
+-   `external_gateway` - (Required) Network UUID of external network
+
+-   `pool` - (Optional; default is "public") Name of IP address pool
+
+    This is used for floating IP allocations
+    and should be the one for the external gateway network given above
+    (see **pool** in *Attributes Reference* below)
+
+-   `region` - (Optional; default is empty string = OpenStack default region)
+    OpenStack region (e.g. `$OS_REGION_NAME` on OpenStack RC file)
+
+-   `name` - (Optional; default is "ext-net") Base name for network resources
+
+    If this is defaulted the following OpenStack names (*not* Terraform names)
+    are used for created resources:
+
+    -   network "ext-net"
+    -   subnet "ext-net-subnet"
+    -   router "ext-net-gateway"
+
+Attributes Reference
+--------------------
+
+The following module outputs (attributes) are exported:
+
+-   `uuid` - Network UUID for use in OpenStack Nova compute instances
+
+-   `pool` - Name of IP address pool for floating IP allocations
+
+    This should be associated with the external gateway network given above.
+
+    To insure the proper destruction order
+    (compute instance -> floating IP -> gateway router)
+    floating IPs should have a dependency on the gateway router.
+
+    Terraform 0.4.2 does not allow **depends_on** to use a module name
+    (see <https://github.com/hashicorp/terraform/issues/1178>)
+    or to contain an interpolated variable,
+    so there is no way to create an explicit dependency.
+    Instead we create an implicit dependency by having the floating IP
+    get the pool name from this module.
+
+    Note that Terraform 0.4-0.4.2 have other problems with module dependencies
+    as well (see <https://github.com/hashicorp/terraform/issues/1582>)
+    so resource destruction using modules will require manual intervention.

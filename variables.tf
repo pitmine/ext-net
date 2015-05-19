@@ -28,6 +28,12 @@ variable "name" {
     default = "ext-net"
 }
 
+# ID of tenant (provided to reduce spurious "modifications")
+variable "tenant_id" {
+    description = "ID of tenant"
+    default = ""
+}
+
 # OS_REGION_NAME in $OS_TENANT_NAME-openrc.sh from 'Download OpenStack RC File'
 variable "region" {
     description = "Hosting region"
